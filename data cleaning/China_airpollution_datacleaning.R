@@ -43,7 +43,7 @@ data.all <- data.all %>%
               mutate(date = paste(substr(date, 1, 4), substr(date, 5, 6), substr(date, 7, 8), sep = "/")) %>%
                 mutate(date = as.Date(date))
 
-####################################################### station id ######################################################
+###################################################### station info #####################################################
 
 # verify whether there is a station id that represent different station in different date
 filenames <- list.files("dataset/station id", pattern = "*.csv")
@@ -82,8 +82,7 @@ for(var in c("station_id", "station_name", "city")) {
 
 station <- station_new
 
-####################################################### station id ######################################################
-####################################################### station id ######################################################
+######################################### gather dataset and merge with station #########################################
 
 filenames <- list.files("outputted dataset/annual data")
 file <- paste("outputted dataset/annual data", filenames, sep = "/")
@@ -112,31 +111,31 @@ for(i in 1:length(file)) {
     data.typ <- filter(data, type == typ)
     data.typ <- as.matrix(data.typ[, 4:ncol(data.typ)])
     
-    # # Anderson-Darling test for normality
-    # for(j in 1:ncol(data.typ)) {
-    #   data.typ.temp <- na.omit(data.typ[,j])
-    #   if(length(data.typ.temp) > 7) { # ad.test requires sample size > 7
-    #     adtest <- ad.test(data.typ.temp)
-    #   }
-    #   
-    #   if(isTRUE(adtest$p.value > 0.05)) {
-    #     ad.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "A-D test")
-    #     normtest <- rbind(normtest, ad.test.norm)
-    #   }
-    # }
-    # 
-    # # Kolmogorov-Smirnov test test for normality
-    # for(j in 1:ncol(data.typ)) {
-    #   data.typ.temp <- na.omit(data.typ[,j])
-    #   if(length(data.typ.temp) > 7) {
-    #     kstest <- ks.test(x = data.typ.temp, y = "pnorm", alternative = "two.sided")
-    #   }
-    #   
-    #   if(isTRUE(kstest$p.value > 0.05)) {
-    #     ks.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "K-S test")
-    #     normtest <- rbind(normtest, ks.test.norm)
-    #   }
-    # }
+    # Anderson-Darling test for normality
+    for(j in 1:ncol(data.typ)) {
+      data.typ.temp <- na.omit(data.typ[,j])
+      if(length(data.typ.temp) > 7) { # ad.test requires sample size > 7
+        adtest <- ad.test(data.typ.temp)
+      }
+
+      if(isTRUE(adtest$p.value > 0.05)) {
+        ad.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "A-D test")
+        normtest <- rbind(normtest, ad.test.norm)
+      }
+    }
+
+    # Kolmogorov-Smirnov test test for normality
+    for(j in 1:ncol(data.typ)) {
+      data.typ.temp <- na.omit(data.typ[,j])
+      if(length(data.typ.temp) > 7) {
+        kstest <- ks.test(x = data.typ.temp, y = "pnorm", alternative = "two.sided")
+      }
+
+      if(isTRUE(kstest$p.value > 0.05)) {
+        ks.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "K-S test")
+        normtest <- rbind(normtest, ks.test.norm)
+      }
+    }
     
     # graphic test
     for(j in 1:ncol(data.typ)) {
@@ -147,10 +146,8 @@ for(i in 1:length(file)) {
           qqline(data.typ.temp)
           dev.off()
       }
+    }
   }
 }
-}
+
 saveRDS(normtest[2:nrow(normtest), ], file = "F:/Box Sync/air polution/China_airpollution/distribution test/statistical test/normal distribution test.rds")
-
-
-
