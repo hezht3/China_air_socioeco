@@ -1,12 +1,10 @@
 #################################### China air pollution data cleaning (2014 - 2020) ####################################
 
-memory.limit(10000)
-
 require(tidyverse)
 require(data.table)
 require(nortest)
 
-setwd("F:/Box Sync/air polution/China_airpollution")
+setwd("F:/air polution/China_airpollution")
 
 ######################################### merge air pollution data of each year #########################################
 
@@ -14,18 +12,19 @@ dir <- c("dataset/air quality/station_20140513-20141231/", "dataset/air quality/
          "dataset/air quality/station_20170101-20171231/", "dataset/air quality/station_20180101-20181231/", "dataset/air quality/station_20190101-20191231/",
          "dataset/air quality/station_20200101-20201231/")
 
+data <- list()
+merge.data <- list()
 for(path in dir) {
   filenames <- list.files(path)
   file <- paste(path, filenames, sep = "")
+  year <- substr(path, 29, 32)
   
-  merge.data <- as.data.table(read.csv(file[1], header = TRUE, sep = ","))
-  for(i in 2:length(file)) {
-    merge.data <- bind_rows(merge.data, as.data.table(read.csv(file[i], header = TRUE, sep =",")))
+  for(i in 1:length(file)) {
+    date <- substr(file[i], 59, 66)
+    data[[year]][[date]] <- fread(file[i], header = TRUE, sep =",")
   }
   
-  year <- substr(path, 21, 24)
-  saveRDS(merge.data, file = paste("F:/Box Sync/air polution/China_airpollution/outputted dataset/annual data/", year, ".rds", sep = ""))
-  filenames <- c()
+  merge.data[[year]] <- rbindlist(data, use.names = TRUE, fill = TRUE, idcol = FALSE)
 }
 
 ######################################### merge air pollution data of all years #########################################
@@ -88,11 +87,11 @@ filenames <- list.files("outputted dataset/annual data")
 file <- paste("outputted dataset/annual data", filenames, sep = "/")
 for(i in 1:length(file)) {
   data <- readRDS(file[i])
+  data <- as.data.table(data)
   
   data <- data %>%
             gather(station_id, value, starts_with("X"), na.rm = TRUE) %>%
-              left_join(data, station, by = "station_id")
-  
+              left_join(station, by = "station_id", suffix = c(".data", ".station"))
   saveRDS(data, file = paste("F:/Box Sync/air polution/China_airpollution/outputted dataset/annual data with station info/", substr(file[1], 31, 34), "_station info.rds", sep = ""))
 }
 
@@ -112,30 +111,30 @@ for(i in 1:length(file)) {
     data.typ <- as.matrix(data.typ[, 4:ncol(data.typ)])
     
     # Anderson-Darling test for normality
-    for(j in 1:ncol(data.typ)) {
-      data.typ.temp <- na.omit(data.typ[,j])
-      if(length(data.typ.temp) > 7) { # ad.test requires sample size > 7
-        adtest <- ad.test(data.typ.temp)
-      }
-
-      if(isTRUE(adtest$p.value > 0.05)) {
-        ad.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "A-D test")
-        normtest <- rbind(normtest, ad.test.norm)
-      }
-    }
+    # for(j in 1:ncol(data.typ)) {
+    #   data.typ.temp <- na.omit(data.typ[,j])
+    #   if(length(data.typ.temp) > 7) { # ad.test requires sample size > 7
+    #     adtest <- ad.test(data.typ.temp)
+    #   }
+    # 
+    #   if(isTRUE(adtest$p.value > 0.05)) {
+    #     ad.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "A-D test")
+    #     normtest <- rbind(normtest, ad.test.norm)
+    #   }
+    # }
 
     # Kolmogorov-Smirnov test test for normality
-    for(j in 1:ncol(data.typ)) {
-      data.typ.temp <- na.omit(data.typ[,j])
-      if(length(data.typ.temp) > 7) {
-        kstest <- ks.test(x = data.typ.temp, y = "pnorm", alternative = "two.sided")
-      }
-
-      if(isTRUE(kstest$p.value > 0.05)) {
-        ks.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "K-S test")
-        normtest <- rbind(normtest, ks.test.norm)
-      }
-    }
+    # for(j in 1:ncol(data.typ)) {
+    #   data.typ.temp <- na.omit(data.typ[,j])
+    #   if(length(data.typ.temp) > 7) {
+    #     kstest <- ks.test(x = data.typ.temp, y = "pnorm", alternative = "two.sided")
+    #   }
+    # 
+    #   if(isTRUE(kstest$p.value > 0.05)) {
+    #     ks.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "K-S test")
+    #     normtest <- rbind(normtest, ks.test.norm)
+    #   }
+    # }
     
     # graphic test
     for(j in 1:ncol(data.typ)) {
