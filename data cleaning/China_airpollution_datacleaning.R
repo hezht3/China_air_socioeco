@@ -89,10 +89,14 @@ for(i in 1:length(file)) {
   data <- readRDS(file[i])
   data <- as.data.table(data)
   
-  data <- data %>%
-            gather(station_id, value, starts_with("X"), na.rm = TRUE) %>%
-              left_join(station, by = "station_id", suffix = c(".data", ".station"))
-  saveRDS(data, file = paste("F:/Box Sync/air polution/China_airpollution/outputted dataset/annual data with station info/", substr(file[1], 31, 34), "_station info.rds", sep = ""))
+  for(typ in c("AQI", "CO", "CO_24h", "NO2", "NO2_24h", "O3", "O3_24h", "O3_8h", "O3_8h_24h", "PM10", "PM10_24h", "PM2.5", "PM2.5_24h", "SO2", "SO2_24h")) {
+    data.typ <- data %>%
+                    filter(type == typ) %>%
+                        gather(station_id, value, starts_with("X"), na.rm = TRUE) %>%
+                            left_join(station, by = "station_id", suffix = c(".data", ".station"))
+      # merge(station, by = "station_id", all.x = TRUE)
+    saveRDS(data.typ, file = paste("F:/air polution/China_airpollution/outputted dataset/annual data with station info/", substr(file[i], 31, 34), "_", typ,"_station info.rds", sep = ""))
+  }
 }
 
 ######################################### normal distribution test of each year #########################################
@@ -111,30 +115,30 @@ for(i in 1:length(file)) {
     data.typ <- as.matrix(data.typ[, 4:ncol(data.typ)])
     
     # Anderson-Darling test for normality
-    # for(j in 1:ncol(data.typ)) {
-    #   data.typ.temp <- na.omit(data.typ[,j])
-    #   if(length(data.typ.temp) > 7) { # ad.test requires sample size > 7
-    #     adtest <- ad.test(data.typ.temp)
-    #   }
-    # 
-    #   if(isTRUE(adtest$p.value > 0.05)) {
-    #     ad.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "A-D test")
-    #     normtest <- rbind(normtest, ad.test.norm)
-    #   }
-    # }
+    for(j in 1:ncol(data.typ)) {
+       data.typ.temp <- na.omit(data.typ[,j])
+       if(length(data.typ.temp) > 7) { # ad.test requires sample size > 7
+         adtest <- ad.test(data.typ.temp)
+       }
+    
+       if(isTRUE(adtest$p.value > 0.05)) {
+         ad.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "A-D test")
+         normtest <- rbind(normtest, ad.test.norm)
+       }
+    }
 
     # Kolmogorov-Smirnov test test for normality
-    # for(j in 1:ncol(data.typ)) {
-    #   data.typ.temp <- na.omit(data.typ[,j])
-    #   if(length(data.typ.temp) > 7) {
-    #     kstest <- ks.test(x = data.typ.temp, y = "pnorm", alternative = "two.sided")
-    #   }
-    # 
-    #   if(isTRUE(kstest$p.value > 0.05)) {
-    #     ks.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "K-S test")
-    #     normtest <- rbind(normtest, ks.test.norm)
-    #   }
-    # }
+    for(j in 1:ncol(data.typ)) {
+       data.typ.temp <- na.omit(data.typ[,j])
+       if(length(data.typ.temp) > 7) {
+         kstest <- ks.test(x = data.typ.temp, y = "pnorm", alternative = "two.sided")
+       }
+    
+       if(isTRUE(kstest$p.value > 0.05)) {
+         ks.test.norm <- c(substr(file[i], 31, 34), typ, colnames(data.typ)[j], "K-S test")
+         normtest <- rbind(normtest, ks.test.norm)
+       }
+    }
     
     # graphic test
     for(j in 1:ncol(data.typ)) {
