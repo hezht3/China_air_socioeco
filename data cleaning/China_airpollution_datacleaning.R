@@ -53,7 +53,11 @@ colnames(station_pre) <- c("station_id", "station_name", "city", "long", "lat")
 
 for(i in 2:length(file) - 1) {
   station_new <- read.csv(file[i], header = TRUE, sep = ",", encoding = "UTF-8")
-  colnames(station_new) <- c("station_id", "station_name", "city", "long", "lat")
+  if(ncol(station_new) == 5) {
+    colnames(station_new) <- c("station_id", "station_name", "city", "long", "lat")
+  } else if(ncol(station_new) == 6) {
+    colnames(station_new) <- c("station_id", "station_name", "city", "long", "lat", "reference point")
+  }
   
   station_diff <- list()
   for(var in c("station_id", "station_name", "city", "long", "lat")) {
@@ -80,6 +84,7 @@ for(var in c("station_id", "station_name", "city")) {
 } # no differences were found
 
 station <- station_new
+station$station_id <- paste("X", station$station_id, sep = "")
 
 ######################################### gather dataset and merge with station #########################################
 
